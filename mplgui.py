@@ -46,12 +46,6 @@ class MPL:
         new_plot.connect("clicked", self.create_new_plot)
         self.toolbar.insert(new_plot, 0)
 
-        # GUI building strings
-        self.strings = {}
-        for fn in ("series", "data"):
-            with open("{}.glade".format(fn)) as f:
-                self.strings[fn] = f.read()
-
     def create_new_plot(self, *args):
         # NON-GUI
         self.plot_num += 1
@@ -88,13 +82,12 @@ class MPL:
 
         # panel for option
         builder = Gtk.Builder()
-        string = self.strings["series"].replace("*", "1")
-        builder.add_from_string(string) 
+        builder.add_from_file("series.glade") 
         builder.connect_signals(self)
 
-        plot["data_box"] = builder.get_object("data_box1")
+        plot["data_box"] = builder.get_object("data_box")
 
-        panel = builder.get_object("panel1")
+        panel = builder.get_object("panel")
         box.pack_start(panel, True, True, 4)
 
         plot_button = Gtk.Button("Plot")
@@ -103,18 +96,15 @@ class MPL:
         box.pack_start(plot_button, False, False, 0)
 
         # Add data fields
-        for n, (k, v) in enumerate(self.variables.items()):
-            current_id = "1_{}".format(n)
-
+        for k, v in self.variables.items():
             builder = Gtk.Builder()
-            string = self.strings["data"].replace("*", current_id)
-            builder.add_from_string(string) 
+            builder.add_from_file("data.glade") 
             builder.connect_signals(self)
 
-            field = builder.get_object("data_field{}".format(current_id))
+            field = builder.get_object("data_field")
             plot["data_box"].pack_start(field, False, False, 8)
 
-            var_label = builder.get_object("label{}".format(current_id))
+            var_label = builder.get_object("label")
             var_label.set_text(k)
 
         paned.add1(box)
