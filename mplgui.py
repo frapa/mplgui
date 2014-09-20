@@ -46,12 +46,19 @@ class MPL:
         new_plot.connect("clicked", self.create_new_plot)
         self.toolbar.insert(new_plot, 0)
 
+        # GUI building strings
+        self.strings = {}
+        for fn in ("series", "data"):
+            with open("{}.glade".format(fn)) as f:
+                self.strings[fn] = f.read()
+
     def create_new_plot(self, *args):
         # NON-GUI
         self.plot_num += 1
         self.plots[self.plot_num] = {
             "type": 1
         }
+        plot = self.plots[self.plot_num]
 
         # GUI
         paned = Gtk.Paned()
@@ -64,32 +71,51 @@ class MPL:
         box.set_margin_right(4)
         box.set_margin_top(4)
         box.set_margin_bottom(4)
+        box.set_size_request(240, 100)
 
         label_type = Gtk.Label("Plot type")
         box.pack_start(label_type, False, False, 0)
 
         button_series = Gtk.RadioButton.new_with_label_from_widget(None, "Series")
-        button_series.connect("toggled", self.on_plot_type_changed, self.plots[self.plot_num], SERIES)
+        button_series.connect("toggled", self.on_plot_type_changed, plot, SERIES)
         button_series.set_visible(True)
         box.pack_start(button_series, False, False, 0)
         
         button_all_vs_first = Gtk.RadioButton.new_with_label_from_widget(button_series, "All vs first")
-        button_all_vs_first.connect("toggled", self.on_plot_type_changed, self.plots[self.plot_num], ALL_VS_FIRST)
+        button_all_vs_first.connect("toggled", self.on_plot_type_changed, plot, ALL_VS_FIRST)
         button_all_vs_first.set_visible(True)
         box.pack_start(button_all_vs_first, False, False, 0)
 
         # panel for option
         builder = Gtk.Builder()
-        builder.add_from_file("series.glade") 
+        string = self.strings["series"].replace("*", "1")
+        builder.add_from_string(string) 
         builder.connect_signals(self)
 
-        panel = builder.get_object("panel")
-        box.pack_start(panel, True, False, 0)
+        plot["data_box"] = builder.get_object("data_box1")
+
+        panel = builder.get_object("panel1")
+        box.pack_start(panel, True, True, 4)
 
         plot_button = Gtk.Button("Plot")
-        plot_button.connect("clicked", self.plot, self.plots[self.plot_num])
+        plot_button.connect("clicked", self.plot, plot)
         plot_button.set_visible(True)
         box.pack_start(plot_button, False, False, 0)
+
+        # Add data fields
+        for n, (k, v) in enumerate(self.variables.items()):
+            current_id = "1_{}".format(n)
+
+            builder = Gtk.Builder()
+            string = self.strings["data"].replace("*", current_id)
+            builder.add_from_string(string) 
+            builder.connect_signals(self)
+
+            field = builder.get_object("data_field{}".format(current_id))
+            plot["data_box"].pack_start(field, False, False, 8)
+
+            var_label = builder.get_object("label{}".format(current_id))
+            var_label.set_text(k)
 
         paned.add1(box)
 
@@ -97,7 +123,7 @@ class MPL:
         image = Gtk.Image()
         image.set_visible(True)
 
-        self.plots[self.plot_num]["image"] = image
+        plot["image"] = image
 
         paned.add2(image)
 
