@@ -55,7 +55,9 @@ class MPL:
         new_plot.connect("clicked", self.create_new_plot)
         self.toolbar.insert(new_plot, 0)
 
-    def change_panel(self, new_panel, plot):
+    def change_panel(self, t, plot):
+        new_panel = PLOT_PANELS[t]
+
         # panel for option
         builder = Gtk.Builder()
         builder.add_from_file("{}.glade".format(new_panel)) 
@@ -68,6 +70,14 @@ class MPL:
         # Add data fields
         for n, k in enumerate(self.variables.keys()):
             self.add_var(plot, k, n)
+
+        # Settings specific to the type of panel choosen
+        getattr(self, "change_to_" + PLOT_PANELS[t])(plot, builder, t)
+
+        # Add some references
+        plot["title_entry"] = builder.get_object("title_entry")
+        plot["x_entry"] = builder.get_object("x_entry")
+        plot["y_entry"] = builder.get_object("y_entry")
 
         return panel
 
@@ -115,7 +125,7 @@ class MPL:
         box.pack_start(box_plot_type, False, False, 0)        
 
         # Panel
-        panel = self.change_panel(PLOT_PANELS[plot_type], plot)
+        panel = self.change_panel(plot_type, plot)
         plot["panel"] = panel
         box.pack_start(panel, True, True, 4)        
 
@@ -136,9 +146,6 @@ class MPL:
 
         box.set_visible(True)
         paned.set_visible(True)
-
-        plot["paned"] = paned
-        plot["label"] = label
 
         i = self.notebook.append_page(paned, label)
         self.pages[paned] = self.plot_num
@@ -161,9 +168,9 @@ class MPL:
         
         dialog.destroy()
 
-    def on_var_deleted(self, button, field, plot, n):
+    def on_var_deleted(self, button, field, plot, v):
         field.destroy()
-        del plot["variables"][n]
+        plot["variables"].remove(v)
 
     def on_var_add(self, button):
         plot = self.plots[self.current_plot]
@@ -191,7 +198,7 @@ class MPL:
         color_button.set_rgba(gdk_color)
 
         color_button = builder.get_object("delete_button")
-        color_button.connect("clicked", self.on_var_deleted, field, plot, n)
+        color_button.connect("clicked", self.on_var_deleted, field, plot, var)
 
         combo = builder.get_object("combo")
         combo.set_entry_text_column(0)
@@ -214,13 +221,34 @@ class MPL:
     def on_plot_type_changed(self, button, plot, t):
         plot["panel"].destroy()
 
-        panel = self.change_panel(PLOT_PANELS[t], plot)
+        plot["variables"] = []
+
+        panel = self.change_panel(t, plot)
         plot["panel"] = panel
 
         plot["panel_box"].pack_start(panel, True, True, 4)        
         plot["panel_box"].reorder_child(panel, 1)
 
         plot["type"] = t
+
+    def change_to_series(self, plot, builder, t):
+        pass
+    
+    def change_to_all_vs_first(self, plot, builder, t):
+        variabs = list(self.variables.keys())
+        plot["first"] = variabs[0]
+
+        abscissa = builder.get_object("abscissa_combo")
+        abscissa.connect("changed", self.on_change_absissa, plot)
+
+        for key in variabs:
+            abscissa.append_text(key)
+
+        abscissa.set_active(0)
+
+    def on_change_absissa(self, combo, plot):
+        string = combo.get_active_text()
+        plot["first"] = string
 
     def on_switch_plot(self, notebook, page, page_num):
         try:
@@ -229,7 +257,7 @@ class MPL:
             # Sometimes one selects the "Data" tab!!!
             pass
 
-    def plot(self, button, plot=None):
+    def plot(self, button, plot):
         f = plt.figure()
         ax = f.add_subplot(111)
 
@@ -242,10 +270,18 @@ class MPL:
                 ax.errorbar(x=np.arange(len(values)), y=values,
                     c=color)
         elif t == ALL_VS_FIRST:
-            first = list(self.variables.keys())[0]
-            for k, v in self.variables.items():
-                if k != first:
-                    ax.errorbar(x=self.variables[first], y=v)
+            first = plot["first"]
+            for v in plot["variables"]:
+                values = self.variables[v["key"]]
+                color = v["color"]
+
+                ax.errorbar(x=self.variables[first],
+                    y=values, c=color)
+
+        # Title and labels stuff
+        f.suptitle(plot["title_entry"].get_text())
+        ax.set_xlabel(plot["x_entry"].get_text())
+        ax.set_ylabel(plot["y_entry"].get_text())
 
         f.savefig("i.png")
         plot["image"].set_from_file("i.png")
