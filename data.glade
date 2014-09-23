@@ -2,18 +2,19 @@
 <!-- Generated with glade 3.16.1 -->
 <interface>
   <requires lib="gtk+" version="3.4"/>
-  <object class="GtkBox" id="data_field*">
+  <object class="GtkBox" id="data_field">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="orientation">vertical</property>
     <child>
-      <object class="GtkBox" id="box2*">
+      <object class="GtkBox" id="box2">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
-          <object class="GtkLabel" id="label*">
+          <object class="GtkLabel" id="label">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="margin_left">4</property>
             <property name="label" translatable="yes">label</property>
           </object>
           <packing>
@@ -23,7 +24,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="box1*">
+          <object class="GtkBox" id="box1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="hexpand">True</property>
@@ -38,16 +39,30 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="delete_button*">
-            <property name="label" translatable="yes">x</property>
+          <object class="GtkColorButton" id="color_button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="margin_right">2</property>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="delete_button">
+            <property name="label" translatable="yes">x</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="margin_left">2</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">3</property>
           </packing>
         </child>
       </object>
@@ -58,7 +73,7 @@
       </packing>
     </child>
     <child>
-      <object class="GtkComboBox" id="combo*">
+      <object class="GtkComboBoxText" id="combo">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="margin_top">4</property>
