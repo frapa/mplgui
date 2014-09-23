@@ -1,3 +1,5 @@
+import webbrowser
+
 from gi.repository import Gtk, Gdk
 
 import numpy as np
@@ -168,6 +170,10 @@ class MPL:
         
         dialog.destroy()
 
+    def menu_export_pdf(self, *args):
+        f = self.plot(None, self.plots[self.current_plot])
+        f.savefig("plot.pdf")
+
     def on_var_deleted(self, button, field, plot, v):
         field.destroy()
         plot["variables"].remove(v)
@@ -285,6 +291,11 @@ class MPL:
 
         f.savefig("i.png")
         plot["image"].set_from_file("i.png")
+
+        return f
+
+    def on_report_bug(self, *args):
+        webbrowser.open_new_tab("https://github.com/frapa/mplgui/issues")
 
     def on_window_delete(self, *args):
         Gtk.main_quit(*args)
