@@ -57,6 +57,9 @@ class MPL:
         new_plot.connect("clicked", self.create_new_plot)
         self.toolbar.insert(new_plot, 0)
 
+        # Figure
+        self.f = plt.figure()
+
     def change_panel(self, t, plot):
         new_panel = PLOT_PANELS[t]
 
@@ -264,8 +267,8 @@ class MPL:
             pass
 
     def plot(self, button, plot):
-        f = plt.figure()
-        ax = f.add_subplot(111)
+        self.f.clf()
+        ax = self.f.add_subplot(111)
 
         t = plot["type"]   
         if t == SERIES: 
@@ -285,14 +288,14 @@ class MPL:
                     y=values, c=color)
 
         # Title and labels stuff
-        f.suptitle(plot["title_entry"].get_text())
+        self.f.suptitle(plot["title_entry"].get_text())
         ax.set_xlabel(plot["x_entry"].get_text())
         ax.set_ylabel(plot["y_entry"].get_text())
 
-        f.savefig("i.png")
+        self.f.savefig("i.png")
         plot["image"].set_from_file("i.png")
 
-        return f
+        return self.f
 
     def on_report_bug(self, *args):
         webbrowser.open_new_tab("https://github.com/frapa/mplgui/issues")
