@@ -4,8 +4,10 @@
   <requires lib="gtk+" version="3.4"/>
   <object class="GtkWindow" id="window">
     <property name="can_focus">False</property>
+    <property name="title" translatable="yes">Matplotlib Gui</property>
     <property name="default_width">1060</property>
     <property name="default_height">720</property>
+    <property name="icon">mplgui.png</property>
     <signal name="delete-event" handler="on_window_delete" swapped="no"/>
     <child>
       <object class="GtkBox" id="box1">
@@ -34,6 +36,16 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="menu_file_open" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="imagemenuitem1">
+                        <property name="label">gtk-save-as</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="menu_file_save_as" swapped="no"/>
                       </object>
                     </child>
                     <child>

@@ -1,4 +1,5 @@
 import webbrowser
+import os
 
 from gi.repository import Gtk, Gdk
 
@@ -59,6 +60,9 @@ class MPL:
 
         # Figure
         self.f = plt.figure()
+
+        # Window
+        self.win = builder.get_object("window")
 
     def change_panel(self, t, plot):
         new_panel = PLOT_PANELS[t]
@@ -172,6 +176,53 @@ class MPL:
             print(dialog.get_filename())
         
         dialog.destroy()
+
+    def menu_file_save_as(self, *args):
+        if len(self.plots) == 0:
+            dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.ERROR,
+                Gtk.ButtonsType.OK, "No plot selected.")
+            dialog.run()
+
+            dialog.destroy()
+        else:
+            dialog = Gtk.FileChooserDialog("Save as ...", None,
+                Gtk.FileChooserAction.SAVE,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+
+            filter_pdf = Gtk.FileFilter()
+            filter_pdf.set_name("PDF")
+            filter_pdf.add_mime_type("application/pdf")
+            dialog.add_filter(filter_pdf)
+            
+            response = dialog.run()
+            if response == Gtk.ResponseType.OK:
+                filename = dialog.get_filename()
+
+                if dialog.get_filter().get_name() == "PDF":
+                    name, ext = os.path.splitext(filename)
+                    if not ext or ext != ".pdf":
+                        filename += ".pdf"
+
+                if os.path.exists(filename):
+                    ask = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
+                        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                        Gtk.STOCK_SAVE, Gtk.ResponseType.OK),
+                        "A file named '{}' already exists. Do you want to replace it?".format(os.path.basename(filename)))
+                    ask.format_secondary_text("Replacing will overwrite its content.")
+
+                    response = ask.run()
+                    if response == Gtk.ResponseType.CANCEL:
+                        ask.destroy()
+                        dialog.destroy()
+                        return None
+
+                    ask.destroy()
+
+                self.plot(None, self.plots[self.current_plot])
+                self.f.savefig(filename)
+                                
+            dialog.destroy()
 
     def menu_export_pdf(self, *args):
         f = self.plot(None, self.plots[self.current_plot])
