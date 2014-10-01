@@ -24,24 +24,12 @@ class MPL:
         self.builder = builder
 
         # Create and fill model with data
-        self.data = Gtk.ListStore(*[type(v[0]) for k, v in self.variables.items()])
-        
-        for vs in zip(*self.variables.values()):
-            self.data.append(vs)
+        self.update_data_model()
 
         # Setup data view
         self.list = self.builder.get_object("list")
         self.list.set_model(self.data)
-
-        for n, (k, v) in enumerate(self.variables.items()):
-            column = Gtk.TreeViewColumn(k, Gtk.CellRendererText(), text=n)
-            column.set_min_width(120)
-            column.set_resizable(True)
-            column.set_reorderable(True)
-
-            column.connect("clicked", self.on_column_clicked)
-
-            self.list.append_column(column)
+        self.update_data_view()
 
         # Notebook
         self.notebook = builder.get_object("notebook")
@@ -63,6 +51,24 @@ class MPL:
 
         # Window
         self.win = builder.get_object("window")
+
+    def update_data_model(self):
+        print([type(v[0]) for k, v in self.variables.items()])
+        self.data = Gtk.ListStore(*[type(v[0]) for k, v in self.variables.items()])
+        
+        for vs in zip(*self.variables.values()):
+            self.data.append(vs)
+
+    def update_data_view(self):
+        for n, (k, v) in enumerate(self.variables.items()):
+            column = Gtk.TreeViewColumn(k, Gtk.CellRendererText(), text=n)
+            column.set_min_width(120)
+            column.set_resizable(True)
+            column.set_reorderable(True)
+
+            column.connect("clicked", self.on_column_clicked)
+
+            self.list.append_column(column)
 
     def change_panel(self, t, plot):
         new_panel = PLOT_PANELS[t]
@@ -170,10 +176,26 @@ class MPL:
         filter_text.set_name("Text files")
         filter_text.add_mime_type("text/plain")
         dialog.add_filter(filter_text)
-        
+
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            print(dialog.get_filename())
+            filename = dialog.get_filename()
+
+            if dialog.get_filter() == filter_text:
+                builder = Gtk.Builder()
+                builder.add_from_file("text_import.glade") 
+                builder.connect_signals(self)
+                
+                import_dialog = builder.get_object("window")
+                import_dialog.show_all()
+
+                sep_entry = builder.get_object("sep_entry")
+                head_entry = builder.get_object("head_entry")
+                foot_entry = builder.get_object("foot_entry")
+
+                ok = builder.get_object("ok")
+                ok.connect("clicked", self.on_text_import_ok,
+                    import_dialog, filename, sep_entry, head_entry, foot_entry)
         
         dialog.destroy()
 
@@ -224,9 +246,27 @@ class MPL:
                                 
             dialog.destroy()
 
-    def menu_export_pdf(self, *args):
-        f = self.plot(None, self.plots[self.current_plot])
-        f.savefig("plot.pdf")
+    def menu_plot_code(self):
+        pass
+
+    def on_text_import_cancel(self, button, dialog):
+        dialog.close()
+
+    def on_text_import_ok(self, button, dialog, fname, sep_entry, head_entry, foot_entry):
+        sep = sep_entry.get_text()
+        headlines = int(head_entry.get_text())
+        footlines = int(foot_entry.get_text())
+
+        data = np.genfromtxt(fname, delimiter=sep, skip_header=headlines,
+            skip_footer=footlines)
+
+        for n, col in enumerate(data[1,:]):
+            self.variables["dat{}".format(n)] = tuple(map(float, data[:,n])) 
+
+        self.update_data_model()
+        self.update_data_view()
+
+        dialog.close()
 
     def on_var_deleted(self, button, field, plot, v):
         field.destroy()
@@ -318,6 +358,8 @@ class MPL:
             pass
 
     def plot(self, button, plot):
+        plot["code"] = "f = plt.figure()\nax = f.add_subplot(111)\n\n"
+
         self.f.clf()
         ax = self.f.add_subplot(111)
 
@@ -339,9 +381,17 @@ class MPL:
                     y=values, c=color)
 
         # Title and labels stuff
-        self.f.suptitle(plot["title_entry"].get_text())
-        ax.set_xlabel(plot["x_entry"].get_text())
-        ax.set_ylabel(plot["y_entry"].get_text())
+        title = plot["title_entry"].get_text()
+        x_label = plot["x_entry"].get_text()
+        y_label = plot["y_entry"].get_text()
+
+        self.f.suptitle(title)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+
+        plot["code"] += ("f.suptitle('{title}')\nax.set_xlabel('{x}')\n"
+            "ax.set_ylabel('{y}')\n\n").format(title=title,
+            x=x_label, y=y_label)
 
         self.f.savefig("i.png")
         plot["image"].set_from_file("i.png")
